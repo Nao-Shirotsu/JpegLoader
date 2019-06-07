@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include=".clang-format" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\JpegLoader.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\JpegLoader.hpp" />
+  </ItemGroup>
+</Project>
