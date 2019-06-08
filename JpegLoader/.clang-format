@@ -30,6 +30,7 @@ BreakBeforeBraces: Custom
 BreakBeforeBinaryOperators: 'NonAssignment'
 BreakConstructorInitializersBeforeComma: true
 ColumnLimit: 0
+ConstructorInitializerIndentWidth : 2
 Cpp11BracedListStyle: false
 FixNamespaceComments: false
 IndentCaseLabels: false

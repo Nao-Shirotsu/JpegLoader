@@ -1,32 +1,36 @@
+#include <array>
 #include <fstream>
 #include <iostream>
-#include <array>
 
 #include "JpegLoader.hpp"
 
-JpegLoader::JpegLoader(const std::string& fileName) {
+JpegLoader::JpegLoader(const std::string& fileName)
+  : binaryData() {
   std::ifstream ifs(fileName);
-  if( !ifs ) {
-    std::cout << "*ERROR* File loading failed" << std::endl;
+  if (!ifs) {
+    std::cout << "*ERROR* image file loading failed" << std::endl;
     return;
   }
-  
+
   // 一応先頭に飛ぶ
   ifs.seekg(0);
 
   // EOFまで1バイトずつ読みだしてメンバのbinaryDataにemplace
-  while( !ifs.eof() ) {
-    binaryData.emplace_back( ifs.get() );
+  while (!ifs.eof()) {
+    binaryData.emplace_back(ifs.get());
   }
 }
 
 void JpegLoader::DumpRawData() {
-  for( const auto& elem : binaryData ) {
+  for (const auto& elem : binaryData) {
     std::cout << elem;
   }
 }
 
 void JpegLoader::DumpExif() {
+  if( binaryData.empty() ) {
+    return;
+  }
   auto itr = binaryData.begin();
   std::cout << std::hex << *itr;
   ++itr;
@@ -69,8 +73,6 @@ void JpegLoader::DumpExif() {
         elem = *itr;
         ++itr;
       }
-
-
     }
 
     itr = itr - 2;
@@ -78,8 +80,6 @@ void JpegLoader::DumpExif() {
     //++itr;
     //DumpInRange(itr-binaryData.begin(), *itr);
   }
-
-  
 }
 
 void JpegLoader::DumpInRange(int begin, int end) {
