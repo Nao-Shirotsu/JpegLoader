@@ -32,69 +32,64 @@ void JpegLoader::DumpExif() {
     return;
   }
   auto itr = binaryData.begin();
-  std::cout << std::hex << *itr;
-  ++itr;
-  std::cout << *itr << " | START" << std::endl;
+  std::cout << std::hex;
+
+  // 最初のffd8を飛ばす
+  std::cout << static_cast<int32_t>(*itr);
   ++itr;
 
+  std::cout << static_cast<int32_t>(*itr) << " | START" << std::endl;
+  ++itr;
+
+  int32_t segmentSize;
+  
+  // Exif情報があるAPP1セグメント直前まで飛ばす
   while (true) {
-    int ff = *itr;
+    uint8_t ff = *itr;
     ++itr;
 
-    int marker = *itr;
+    uint8_t marker = *itr;
     ++itr;
 
-    if (marker == 0xda) {
+    std::cout << std::hex << static_cast<int32_t>(ff) << static_cast<int32_t>(marker) << std::dec << " | SIZE: ";
+
+    uint8_t segmentSizeByte1 = *itr;
+    ++itr;
+
+    uint8_t segmentSizeByte2 = *itr;
+    ++itr;
+
+    segmentSize = Deserialize(segmentSizeByte1, segmentSizeByte2);
+    std::cout << segmentSize << std::endl;
+    
+    if( marker == 0xe1 ) {
       break;
     }
 
-    std::cout << std::hex << ff << marker << std::dec << " | SIZE: ";
-
-    unsigned char segmentSizeByte1 = *itr;
-    ++itr;
-
-    unsigned char segmentSizeByte2 = *itr;
-    ++itr;
-
-    int segmentSize = Deserialize2bytes(segmentSizeByte1, segmentSizeByte2);
-    std::cout << segmentSize << std::endl;
-
-    /*if (marker == 0xda) {
-      std::cout << "------------\n";
-      for (int i = 0; i < 30; ++i) {
-        std::cout << static_cast<int>(*(itr + i)) << " ";
-      }
-      std::cout << "\n------------" << std::endl;
-    }*/
-
-    if (marker == 0xe1) {
-      std::array<unsigned char, 6> exifId;
-      for (auto& elem : exifId) {
-        elem = *itr;
-        ++itr;
-      }
-    }
-
-    itr = itr - 2;
-    itr += segmentSize;
-    //++itr;
-    //DumpInRange(itr-binaryData.begin(), *itr);
+    itr += segmentSize - 2;
   }
-}
 
-void JpegLoader::DumpInRange(int begin, int end) {
+  // 
+  std::array<uint8_t, 6> exifId;
   std::cout << std::hex;
-  for (int i = begin; i <= end; ++i) {
-    std::cout << static_cast<int>(binaryData[i]) << ' ';
+  for (auto& elem : exifId) {
+    elem = *itr;
+    std::cout << static_cast<int32_t>(elem) << ' ';
+    ++itr;
   }
-  std::cout << "\n================" << std::endl;
+  std::cout << std::endl;
   std::cout << std::dec;
 }
 
-bool JpegLoader::IsJpegFile() {
-  return false;
-}
+//void JpegLoader::DumpInRange(int begin, int end) {
+//  std::cout << std::hex;
+//  for (int i = begin; i <= end; ++i) {
+//    std::cout << static_cast<int>(binaryData[i]) << ' ';
+//  }
+//  std::cout << "\n================" << std::endl;
+//  std::cout << std::dec;
+//}
 
-int Deserialize2bytes(unsigned char first, unsigned char second) {
-  return (static_cast<int>(first) << 8) + static_cast<int>(second);
-}
+//bool JpegLoader::IsJpegFile() {
+//  return false;
+//}
