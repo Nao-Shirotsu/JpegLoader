@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <utility>
 
 // JPEG画像をロードして保持するクラス
 class JpegLoader {
@@ -16,11 +17,9 @@ public:
   void DumpExif();
 
 private:
-  // binaryDataのbegin番からend番まで読んで標準出力
-  //void DumpInRange(int, int size) noexcept(false);
+  // Exif識別コードの先頭までを指すイテレータとセグメントサイズのペアを取得
+  std::pair<std::vector<uint8_t>::iterator, int32_t> GetItrAtExifId();
 
-  // ExifからJpegかどうか判断
-  //bool IsJpegFile();
-
+  // 画像データをそのまま全部ロードするベクタ
   std::vector<uint8_t> binaryData;
 };

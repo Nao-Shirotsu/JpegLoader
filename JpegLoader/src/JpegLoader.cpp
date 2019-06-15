@@ -2,8 +2,8 @@
 #include <fstream>
 #include <iostream>
 
-#include "JpegLoader.hpp"
 #include "Deserialize.hpp"
+#include "JpegLoader.hpp"
 
 JpegLoader::JpegLoader(const std::string& fileName)
   : binaryData() {
@@ -29,21 +29,44 @@ void JpegLoader::DumpRawData() {
 }
 
 void JpegLoader::DumpExif() {
-  if( binaryData.empty() ) {
+  if (binaryData.empty()) {
     return;
   }
+
+  auto [itr, segmentSize] = GetItrAtExifId();
+
+  std::array<uint8_t, 6> exifId;
+  //std::cout << "Exif ID code : ";
+  std::cout << std::hex;
+  for (auto& elem : exifId) {
+    elem = *itr;
+    //std::cout << static_cast<int32_t>(elem) << ' ';
+    ++itr;
+  }
+  //std::cout << std::endl;
+  std::cout << std::dec;
+
+  // ===== test output =====
+  for( int i = 0; i < segmentSize; ++i ) {
+    std::cout << *itr;
+    ++itr;
+  }
+  // =======================
+}
+
+std::pair<std::vector<uint8_t>::iterator, int32_t> JpegLoader::GetItrAtExifId() {
   auto itr = binaryData.begin();
   std::cout << std::hex;
 
   // 最初のffd8を飛ばす
-  std::cout << static_cast<int32_t>(*itr);
+  // std::cout << static_cast<int32_t>(*itr);
   ++itr;
 
-  std::cout << static_cast<int32_t>(*itr) << " | START" << std::endl;
+  // std::cout << static_cast<int32_t>(*itr) << " | START" << std::endl;
   ++itr;
 
   int32_t segmentSize;
-  
+
   // Exif情報があるAPP1セグメント直前まで飛ばす
   while (true) {
     uint8_t ff = *itr;
@@ -52,7 +75,7 @@ void JpegLoader::DumpExif() {
     uint8_t marker = *itr;
     ++itr;
 
-    std::cout << std::hex << static_cast<int32_t>(ff) << static_cast<int32_t>(marker) << std::dec << " | SIZE: ";
+    // std::cout << std::hex << static_cast<int32_t>(ff) << static_cast<int32_t>(marker) << std::dec << " | SIZE: ";
 
     uint8_t segmentSizeByte1 = *itr;
     ++itr;
@@ -61,36 +84,14 @@ void JpegLoader::DumpExif() {
     ++itr;
 
     segmentSize = Deserialize(segmentSizeByte1, segmentSizeByte2);
-    std::cout << segmentSize << std::endl;
-    
-    if( marker == 0xe1 ) {
+    // std::cout << segmentSize << std::endl;
+
+    if (marker == 0xe1) {
       break;
     }
 
     itr += segmentSize - 2;
   }
 
-  // 
-  std::array<uint8_t, 6> exifId;
-  std::cout << std::hex;
-  for (auto& elem : exifId) {
-    elem = *itr;
-    std::cout << static_cast<int32_t>(elem) << ' ';
-    ++itr;
-  }
-  std::cout << std::endl;
-  std::cout << std::dec;
+  return std::make_pair(itr, segmentSize);
 }
-
-//void JpegLoader::DumpInRange(int begin, int end) {
-//  std::cout << std::hex;
-//  for (int i = begin; i <= end; ++i) {
-//    std::cout << static_cast<int>(binaryData[i]) << ' ';
-//  }
-//  std::cout << "\n================" << std::endl;
-//  std::cout << std::dec;
-//}
-
-//bool JpegLoader::IsJpegFile() {
-//  return false;
-//}
