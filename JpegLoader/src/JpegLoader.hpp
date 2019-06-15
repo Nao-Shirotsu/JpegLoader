@@ -24,15 +24,3 @@ private:
 
   std::vector<uint8_t> binaryData;
 };
-
-template <class... Args>
-int32_t Deserialize(Args... args) {
-  auto byteRow = std::initializer_list{ args... };
-  int shiftAmount = byteRow.size() - 1;
-  int result = 0;
-  for (uint8_t byte : byteRow) {
-    result += static_cast<uint32_t>(byte) << 8 * shiftAmount;
-    --shiftAmount;
-  }
-  return result;
-}

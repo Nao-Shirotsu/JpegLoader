@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "JpegLoader.hpp"
+#include "Deserialize.hpp"
 
 JpegLoader::JpegLoader(const std::string& fileName)
   : binaryData() {
