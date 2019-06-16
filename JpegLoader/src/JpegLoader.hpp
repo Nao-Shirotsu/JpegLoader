@@ -4,11 +4,13 @@
 #include <vector>
 #include <utility>
 
+namespace jpeg {
+
 // JPEG画像をロードして保持するクラス
-class JpegLoader {
+class Loader {
 public:
   // ファイル名を受け取ってデータをbinaryDataに格納
-  JpegLoader(const std::string& fileName);
+  Loader(const std::string& fileName);
 
   // データをそのまま標準出力
   void DumpRawData();
@@ -32,3 +34,5 @@ private:
   // APP1タグフィールドのvalueの位置に飛ぶためのオフセットの起点位置
   std::vector<uint8_t>::iterator basePosItr;
 };
+
+}// namespace jpeg

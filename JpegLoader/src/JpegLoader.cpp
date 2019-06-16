@@ -3,7 +3,7 @@
 #include <iostream>
 #include <optional>
 
-#include "Deserialize.hpp"
+#include "JpegDeserialize.hpp"
 #include "JpegLoader.hpp"
 
 // TagFieldのTagValueの取り得る型とその値の数からバイト数を計算するutil関数
@@ -29,9 +29,11 @@ std::optional<int32_t> CalcTagValueLength(const int32_t type, const int32_t coun
   return std::nullopt; // 不正値
 }
 
-JpegLoader::JpegLoader(const std::string& fileName)
+namespace jpeg {
+
+Loader::Loader(const std::string& fileName)
   : binaryData()
-  , basePosItr(){
+  , basePosItr() {
   std::ifstream ifs(fileName);
   if (!ifs) {
     std::cout << "*ERROR* image file loading failed" << std::endl;
@@ -47,13 +49,13 @@ JpegLoader::JpegLoader(const std::string& fileName)
   }
 }
 
-void JpegLoader::DumpRawData() {
+void Loader::DumpRawData() {
   for (const auto& elem : binaryData) {
     std::cout << elem;
   }
 }
 
-void JpegLoader::DumpExif() {
+void Loader::DumpExif() {
   if (binaryData.empty()) {
     return;
   }
@@ -93,7 +95,7 @@ void JpegLoader::DumpExif() {
     elem = *itr;
     ++itr;
   }
-  uint32_t skipOffset = Deserialize(readBytes[0], readBytes[1], readBytes[2], readBytes[3] );
+  uint32_t skipOffset = jpeg::Deserialize(readBytes[0], readBytes[1], readBytes[2], readBytes[3]);
   std::cout << "offset to IFD0 | " << skipOffset << std::endl;
 
   // タグフィールドのvalueオフセットの起点位置
@@ -104,7 +106,7 @@ void JpegLoader::DumpExif() {
   OutputIFD(itr);
 }
 
-void JpegLoader::OutputIFD(std::vector<uint8_t>::iterator itr) {
+void Loader::OutputIFD(std::vector<uint8_t>::iterator itr) {
   std::array<uint8_t, 4> bytes;
 
   // IFDのタグ数を読む
@@ -112,7 +114,7 @@ void JpegLoader::OutputIFD(std::vector<uint8_t>::iterator itr) {
   ++itr;
   bytes[1] = *itr;
   ++itr;
-  uint32_t numOfTag = Deserialize(bytes[0], bytes[1]);
+  uint32_t numOfTag = jpeg::Deserialize(bytes[0], bytes[1]);
 
   // タグの数ぶんタグフィールドを読む
   for (int i = 0; i < numOfTag; ++i) {
@@ -124,17 +126,18 @@ void JpegLoader::OutputIFD(std::vector<uint8_t>::iterator itr) {
     elem = *itr;
     ++itr;
   }
-  auto offset = Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]);
+  auto offset = jpeg::Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]);
 
   // N-th IFD内のM-thへのoffsetが0ならM-th IFDは存在しない
-  if(offset == 0) {
+  if (offset == 0) {
     return;
   }
 
   itr = basePosItr + offset;
+  OutputIFD(itr);
 }
 
-void JpegLoader::OutputTagField(std::vector<uint8_t>::iterator itr) {
+void Loader::OutputTagField(std::vector<uint8_t>::iterator itr) {
   std::array<uint8_t, 4> bytes;
 
   // タグ番号とタグタイプを読む
@@ -142,19 +145,19 @@ void JpegLoader::OutputTagField(std::vector<uint8_t>::iterator itr) {
     elem = *itr;
     ++itr;
   }
-  auto tagNumber = Deserialize(bytes[0], bytes[1]);
-  auto tagType = Deserialize(bytes[2], bytes[3]);
-  std::cout << std::dec;
+  auto tagNumber = jpeg::Deserialize(bytes[0], bytes[1]);
+  auto tagType = jpeg::Deserialize(bytes[2], bytes[3]);
+  std::cout << std::hex;
   std::cout << "\n=======Tag Field=======" << std::endl;
-  std::cout << "Number : " << tagNumber << std::endl;
-  std::cout << "Type   : " << tagType << std::endl;
+  std::cout << "Number : " << static_cast<int32_t>(bytes[0]) << " " << static_cast<int32_t>(bytes[1]) << std::endl;
+  std::cout << "Type   : " << static_cast<int32_t>(bytes[2]) << " " << static_cast<int32_t>(bytes[3]) << std::endl;
 
   // タグに含まれる値の数を読む
   for (auto& elem : bytes) {
     elem = *itr;
     ++itr;
   }
-  auto tagCount = Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]);
+  auto tagCount = jpeg::Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]);
   auto valueByteLength = CalcTagValueLength(tagType, tagCount);
   std::cout << "Count  : " << tagCount << std::endl;
 
@@ -163,7 +166,7 @@ void JpegLoader::OutputTagField(std::vector<uint8_t>::iterator itr) {
     elem = *itr;
     ++itr;
   }
-  
+
   // offsetが4bytes以下ならジャンプはしない
   if (valueByteLength > 4) {
     // valueの長さぶん読んで戻ってくる = itrがこのタグの末尾の一個次にいる
@@ -172,7 +175,7 @@ void JpegLoader::OutputTagField(std::vector<uint8_t>::iterator itr) {
 }
 
 
-std::pair<std::vector<uint8_t>::iterator, int32_t> JpegLoader::GetItrAtExifId() {
+std::pair<std::vector<uint8_t>::iterator, int32_t> Loader::GetItrAtExifId() {
   auto itr = binaryData.begin();
   std::cout << std::hex;
 
@@ -201,7 +204,7 @@ std::pair<std::vector<uint8_t>::iterator, int32_t> JpegLoader::GetItrAtExifId() 
     uint8_t segmentSizeByte2 = *itr;
     ++itr;
 
-    segmentSize = Deserialize(segmentSizeByte1, segmentSizeByte2);
+    segmentSize = jpeg::Deserialize(segmentSizeByte1, segmentSizeByte2);
     // std::cout << segmentSize << std::endl;
 
     if (marker == 0xe1) {
@@ -213,3 +216,5 @@ std::pair<std::vector<uint8_t>::iterator, int32_t> JpegLoader::GetItrAtExifId() 
 
   return std::make_pair(itr, segmentSize);
 }
+
+}// namespace jpeg

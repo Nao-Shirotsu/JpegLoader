@@ -16,6 +16,8 @@ template <int32_t N, std::enable_if_t<N <= 4, std::nullptr_t> = nullptr>
 constexpr void ErrorizeWhenExceeded4() {
 }
 
+namespace jpeg {
+
 // «‚ÌÄ‹AI—¹
 template <int32_t recursionDepth>
 constexpr void ErrorizeWhenInvalidByteData() {
@@ -45,3 +47,5 @@ constexpr int32_t Deserialize(Args... args) {
   ErrorizeWhenInvalidByteData<0>(args...);
   return DeserializeImpl({ args... });
 }
+
+}// namespace jpeg
