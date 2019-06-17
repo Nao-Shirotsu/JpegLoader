@@ -20,7 +20,7 @@ public:
 
 private:
   // 0th IFDの先頭を指すitrを渡して再帰的に出力する
-  void OutputIFD(std::vector<uint8_t>::iterator itr);
+  void OutputIFD(std::vector<uint8_t>::iterator& itr);
 
   // 各タグフィールドの先頭を指すitrを渡して出力する
   void OutputTagField(std::vector<uint8_t>::iterator itr);

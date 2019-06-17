@@ -144,7 +144,7 @@ void Loader::DumpExif() {
   OutputIFD(itr);
 }
 
-void Loader::OutputIFD(std::vector<uint8_t>::iterator itr) {
+void Loader::OutputIFD(std::vector<uint8_t>::iterator& itr) {
   std::cout << "\n~~~~~~~~~~~~~~~~IFD~~~~~~~~~~~~~~~~" << std::endl;
 
   // ===== test output =====
@@ -172,6 +172,7 @@ void Loader::OutputIFD(std::vector<uint8_t>::iterator itr) {
   // タグの数ぶんタグフィールドを読む
   for (int i = 0; i < numOfTag; ++i) {
     OutputTagField(itr);
+    itr += 12; // タグフィールドは12バイトで固定だから、これで次のタグを読める
   }
 
   // ===== test output =====
@@ -192,6 +193,7 @@ void Loader::OutputIFD(std::vector<uint8_t>::iterator itr) {
 
   // N-th IFD内のM-thへのoffsetが0ならM-th IFDは存在しない
   if (offset == 0) {
+    std::cout << "\n~~READING DONE, EXIT APP1 SEGMENT~~"<< std::endl;
     return;
   }
 
@@ -256,6 +258,7 @@ void Loader::OutputTagField(std::vector<uint8_t>::iterator itr) {
       break;
     }
   }
+  std::cout << "\nEND AT [" << (itr - binaryData.begin()) << "] bytes" << std::endl;
   std::cout << "=======================\n" << std::endl;
 }
 
