@@ -6,30 +6,68 @@
 #include "JpegDeserialize.hpp"
 #include "JpegLoader.hpp"
 
-// TagFieldのTagValueの取り得る型とその値の数からバイト数を計算するutil関数
-std::optional<int32_t> CalcTagValueLength(const int32_t type, const int32_t count) {
-  switch (type) { // このswitch好きじゃないなあ
-  case 1: // BYTE
-  case 2: // ASCII
-  case 7: // UNDEFINED
-    return count;
+namespace jpeg {
+
+// TagFieldのTagValueの型を文字列に変換
+const char* ValueTypeToString(const int32_t type) {
+  switch (type) {
+  case 1:
+    return "byte";
+
+  case 2:
+    return "ascii";
+
+  case 7:
+    return "undefined";
+
+  case 3:
+    return "short";
+
+  case 4:
+    return "long";
+
+  case 9:
+    return "signed long";
+
+  case 5:
+    return "rational";
+
+  case 10:
+    return "signed rational";
+  }
+  return "INVALID TYPE";
+}
+
+// TagFieldのTagValueの型の値1つのバイト数
+std::optional<uint16_t> SizeOfValueType(const int32_t type) {
+  switch (type) {
+  case 1:         // BYTE
+  case 2:         // ASCII
+  case 7:         // UNDEFINED
+    return 1;
 
   case 3: // SHORT
-    return 2 * count;
+    return 2;
 
   case 4: // LONG
   case 9: // SLONG
-    return 4 * count;
+    return 4;
 
   case 5:  // RATIONAL
   case 10: // SRATIONAL
-    return 8 * count;
+    return 8;
   }
-
-  return std::nullopt; // 不正値
+  return std::nullopt;
 }
 
-namespace jpeg {
+// TagFieldのTagValueの取り得る型とその値の数からバイト数を計算
+std::optional<int32_t> TagValueLength(const int32_t type, const int32_t count) {
+  auto singleValueSize = SizeOfValueType(type);
+  if(!singleValueSize) {
+    return count * singleValueSize.value();
+  }
+  return std::nullopt;
+}
 
 Loader::Loader(const std::string& fileName)
   : binaryData()
@@ -102,11 +140,21 @@ void Loader::DumpExif() {
   basePosItr = itr - 8;
 
   // これでIFD0の先頭まで飛ぶ
-  itr += (skipOffset - 8);
+  itr = basePosItr + skipOffset;
   OutputIFD(itr);
 }
 
 void Loader::OutputIFD(std::vector<uint8_t>::iterator itr) {
+  std::cout << "\n~~~~~~~~~~~~~~~~IFD~~~~~~~~~~~~~~~~" << std::endl;
+
+  // ===== test output =====
+  // std::cout << "------\nbeginning of OutputIFD" << std::endl;
+  // =======================
+
+  // ===== test output =====
+  // std::cout << "itr pos : " << (itr - binaryData.begin()) << std::endl;
+  // =======================
+
   std::array<uint8_t, 4> bytes;
 
   // IFDのタグ数を読む
@@ -115,11 +163,20 @@ void Loader::OutputIFD(std::vector<uint8_t>::iterator itr) {
   bytes[1] = *itr;
   ++itr;
   uint32_t numOfTag = jpeg::Deserialize(bytes[0], bytes[1]);
+  std::cout << "Num of Tag: " << numOfTag << std::endl;
+
+  // ===== test output =====
+  // std::cout << "calculated numOfTag" << std::endl;
+  // =======================
 
   // タグの数ぶんタグフィールドを読む
   for (int i = 0; i < numOfTag; ++i) {
     OutputTagField(itr);
   }
+
+  // ===== test output =====
+  // std::cout << "read all tags" << std::endl;
+  // =======================
 
   // 次のIFDへのoffsetを読む
   for (auto& elem : bytes) {
@@ -127,6 +184,11 @@ void Loader::OutputIFD(std::vector<uint8_t>::iterator itr) {
     ++itr;
   }
   auto offset = jpeg::Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]);
+  std::cout << "Offset : " << numOfTag << std::endl;
+
+  // ===== test output =====
+  // std::cout << "read offset to next IFD" << std::endl;
+  // =======================
 
   // N-th IFD内のM-thへのoffsetが0ならM-th IFDは存在しない
   if (offset == 0) {
@@ -134,6 +196,12 @@ void Loader::OutputIFD(std::vector<uint8_t>::iterator itr) {
   }
 
   itr = basePosItr + offset;
+
+  // ===== test output =====
+  // std::cout << "itr addition\n------" << std::endl;
+  // =======================
+
+  std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   OutputIFD(itr);
 }
 
@@ -149,8 +217,8 @@ void Loader::OutputTagField(std::vector<uint8_t>::iterator itr) {
   auto tagType = jpeg::Deserialize(bytes[2], bytes[3]);
   std::cout << std::hex;
   std::cout << "\n=======Tag Field=======" << std::endl;
-  std::cout << "Number : " << static_cast<int32_t>(bytes[0]) << " " << static_cast<int32_t>(bytes[1]) << std::endl;
-  std::cout << "Type   : " << static_cast<int32_t>(bytes[2]) << " " << static_cast<int32_t>(bytes[3]) << std::endl;
+  std::cout << "Number   : " << static_cast<int32_t>(bytes[0]) << " " << static_cast<int32_t>(bytes[1]) << std::endl;
+  std::cout << "Type     : " << ValueTypeToString(Deserialize(bytes[2], bytes[3])) << std::endl;
 
   // タグに含まれる値の数を読む
   for (auto& elem : bytes) {
@@ -158,8 +226,8 @@ void Loader::OutputTagField(std::vector<uint8_t>::iterator itr) {
     ++itr;
   }
   auto tagCount = jpeg::Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]);
-  auto valueByteLength = CalcTagValueLength(tagType, tagCount);
-  std::cout << "Count  : " << tagCount << std::endl;
+  auto valueByteLength = TagValueLength(tagType, tagCount);
+  std::cout << "Count    : " << tagCount << std::endl;
 
   // タグのvalueへのoffsetを読む
   for (auto& elem : bytes) {
@@ -171,7 +239,24 @@ void Loader::OutputTagField(std::vector<uint8_t>::iterator itr) {
   if (valueByteLength > 4) {
     // valueの長さぶん読んで戻ってくる = itrがこのタグの末尾の一個次にいる
   }
-  std::cout << "\n=======================" << std::endl;
+  else {
+    std::cout << "Val/offs : ";
+
+    switch(SizeOfValueType( tagType ).value()) {
+    case 1:
+      std::cout << Deserialize(bytes[0]) << std::endl;
+      break;
+
+    case 2:
+      std::cout << Deserialize(bytes[0], bytes[1]) << std::endl;
+      break;
+
+    case 4:
+      std::cout << Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]) << std::endl;
+      break;
+    }
+  }
+  std::cout << "=======================\n" << std::endl;
 }
 
 
