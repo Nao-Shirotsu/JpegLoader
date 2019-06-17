@@ -6,7 +6,7 @@
 #include "JpegDeserialize.hpp"
 #include "JpegLoader.hpp"
 
-namespace jpeg {
+namespace {
 
 // TagFieldのTagValueの型を文字列に変換
 const char* ValueTypeToString(const int32_t type) {
@@ -41,9 +41,9 @@ const char* ValueTypeToString(const int32_t type) {
 // TagFieldのTagValueの型の値1つのバイト数
 std::optional<uint16_t> SizeOfValueType(const int32_t type) {
   switch (type) {
-  case 1:         // BYTE
-  case 2:         // ASCII
-  case 7:         // UNDEFINED
+  case 1: // BYTE
+  case 2: // ASCII
+  case 7: // UNDEFINED
     return 1;
 
   case 3: // SHORT
@@ -63,11 +63,15 @@ std::optional<uint16_t> SizeOfValueType(const int32_t type) {
 // TagFieldのTagValueの取り得る型とその値の数からバイト数を計算
 std::optional<int32_t> TagValueLength(const int32_t type, const int32_t count) {
   auto singleValueSize = SizeOfValueType(type);
-  if(!singleValueSize) {
+  if (!singleValueSize) {
     return count * singleValueSize.value();
   }
   return std::nullopt;
 }
+
+}// anonymous namespace
+
+namespace jpeg{
 
 Loader::Loader(const std::string& fileName)
   : binaryData()
@@ -144,7 +148,7 @@ void Loader::DumpExif() {
   OutputIFD(itr);
 }
 
-void Loader::OutputIFD(std::vector<uint8_t>::iterator& itr) {
+void Loader::OutputIFD(std::vector<uint8_t>::iterator itr) {
   std::cout << "\n~~~~~~~~~~~~~~~~IFD~~~~~~~~~~~~~~~~" << std::endl;
 
   // ===== test output =====
