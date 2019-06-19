@@ -5,7 +5,7 @@
 
 #include "JpegDeserialize.hpp"
 #include "JpegLoader.hpp"
-#include "JpegUtils.hpp"
+#include "JpegTagUtils.hpp"
 
 namespace jpeg {
 
