@@ -146,7 +146,7 @@ void Loader::OutputTagField(std::vector<uint8_t>::const_iterator itr) {
   std::cout << "\n=======Tag Field=======" << std::endl;
   std::cout << "Number   : " << static_cast<int32_t>(bytes[0]) << " " << static_cast<int32_t>(bytes[1]) << std::endl;
 
-  if (auto tagTypeStr = ValueTypeToString(Deserialize(bytes[2], bytes[3])); tagTypeStr) {
+  if (auto tagTypeStr = tag::TypeToStr(Deserialize(bytes[2], bytes[3])); tagTypeStr) {
     std::cout << "Type     : " << tagTypeStr.value() << std::endl;
   }
 
@@ -158,7 +158,7 @@ void Loader::OutputTagField(std::vector<uint8_t>::const_iterator itr) {
   const auto tagCount = jpeg::Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]);
   std::cout << "Count    : " << tagCount << std::endl;
 
-  const auto valueByteLength = TagValueLength(tagType, tagCount).value();
+  const auto valueByteLength = tag::ByteLengthOf(tagType, tagCount).value();
 
   // ƒ^ƒO‚Ìvalue‚Ö‚Ìoffset‚ð“Ç‚Þ
   for (auto& elem : bytes) {
@@ -169,10 +169,10 @@ void Loader::OutputTagField(std::vector<uint8_t>::const_iterator itr) {
   std::cout << "Val/offs : ";
   if (valueByteLength > 4) {
     int32_t skipOffset = Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]);
-    OutputTagFieldValue(basePosItr + skipOffset, SizeOfValueType(tagType).value(), tagCount);
+    tag::OutputValue(basePosItr + skipOffset, tag::SizeOf(tagType).value(), tagCount);
   }
   else {
-    switch (SizeOfValueType(tagType).value()) {
+    switch (tag::SizeOf(tagType).value()) {
     case 1:
       std::cout << Deserialize(bytes[0]) << std::endl;
       break;
