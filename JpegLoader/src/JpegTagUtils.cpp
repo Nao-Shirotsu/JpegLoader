@@ -7,32 +7,33 @@ namespace jpeg::tag {
 
 // TagFieldのTagValueの型を文字列に変換
 std::string TypeToStr(const tag::Type type) {
+  using namespace std::literals::string_literals;
   switch (type) {
   case Type::Byte:
-    return "byte";
+    return "byte"s;
 
   case Type::Ascii:
-    return "ascii";
+    return "ascii"s;
 
   case Type::Undefined:
-    return "undefined";
+    return "undefined"s;
 
   case Type::Short:
-    return "short";
+    return "short"s;
 
   case Type::Long:
-    return "long";
+    return "long"s;
 
   case Type::SLong:
-    return "signed long";
+    return "signed long"s;
 
   case Type::Rational:
-    return "rational";
+    return "rational"s;
 
   case Type::SRational:
-    return "signed rational";
+    return "signed rational"s;
   }
-  return "INVALID TYPE";
+  return "INVALID TYPE"s;
 }
 
 // TagFieldのTagValueの型の値1つのバイト数

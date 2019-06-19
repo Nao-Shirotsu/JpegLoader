@@ -8,6 +8,7 @@
 namespace {
 constexpr uint32_t PTR_TO_EXIF_IFD = jpeg::Deserialize(static_cast<uint8_t>(0x87), static_cast<uint8_t>(0x69));
 constexpr uint32_t PTR_TO_GPS_IFD = jpeg::Deserialize(static_cast<uint8_t>(0x88), static_cast<uint8_t>(0x25));
+constexpr uint32_t PTR_TO_ITPLT_IFD = jpeg::Deserialize(static_cast<uint8_t>(0xa0), static_cast<uint8_t>(0x05));
 }
 
 namespace jpeg::tag {
@@ -61,13 +62,13 @@ Field::Field(std::vector<uint8_t>::const_iterator itr, std::vector<uint8_t>::con
 }
 
 bool Field::IsPointer() {
-  if (byteVec.size() != 2 || type != Type::Long) {
+  if (byteVec.size() != 4 || type != Type::Long) {
     return false;
   }
 
   uint32_t ifdPtr = jpeg::Deserialize(byteVec[0], byteVec[1]);
 
-  if (ifdPtr == PTR_TO_EXIF_IFD || ifdPtr == PTR_TO_GPS_IFD) {
+  if (ifdPtr == PTR_TO_EXIF_IFD || ifdPtr == PTR_TO_GPS_IFD || ifdPtr == PTR_TO_ITPLT_IFD) {
     return true;
   }
 
