@@ -1,93 +1,89 @@
 #include <iostream>
 
-#include "JpegTagUtils.hpp"
 #include "JpegDeserialize.hpp"
+#include "JpegTagUtils.hpp"
 
 namespace jpeg::tag {
 
 // TagFieldのTagValueの型を文字列に変換
-std::optional<const char*> TypeToStr(const int32_t type) {
+std::string TypeToStr(const tag::Type type) {
   switch (type) {
-  case 1:
+  case Type::Byte:
     return "byte";
 
-  case 2:
+  case Type::Ascii:
     return "ascii";
 
-  case 7:
+  case Type::Undefined:
     return "undefined";
 
-  case 3:
+  case Type::Short:
     return "short";
 
-  case 4:
+  case Type::Long:
     return "long";
 
-  case 9:
+  case Type::SLong:
     return "signed long";
 
-  case 5:
+  case Type::Rational:
     return "rational";
 
-  case 10:
+  case Type::SRational:
     return "signed rational";
   }
-  return std::nullopt;
+  return "INVALID TYPE";
 }
 
 // TagFieldのTagValueの型の値1つのバイト数
-std::optional<uint16_t> SizeOf(const int32_t type) {
+uint32_t SizeOf(const Type type) {
   switch (type) {
-  case 1: // BYTE
-  case 2: // ASCII
-  case 7: // UNDEFINED
+  case Type::Byte:
+  case Type::Ascii:
+  case Type::Undefined:
     return 1;
 
-  case 3: // SHORT
+  case Type::Short:
     return 2;
 
-  case 4: // LONG
-  case 9: // SLONG
+  case Type::Long:
+  case Type::SLong:
     return 4;
 
-  case 5:  // RATIONAL
-  case 10: // SRATIONAL
+  case Type::Rational:
+  case Type::SRational:
     return 8;
   }
-  return std::nullopt;
+  return 0;
 }
 
 // TagFieldのTagValueの取り得る型とその値の数からバイト数を計算
-std::optional<int32_t> ByteLengthOf(const int32_t type, const int32_t count) {
-  auto singleValueSize = tag::SizeOf(type);
-  if (singleValueSize) {
-    return count * singleValueSize.value();
-  }
-  return std::nullopt;
+uint32_t ByteLengthOf(const Type type, const int32_t count) {
+  return count * tag::SizeOf(type);
 }
 
 void OutputValue(std::vector<uint8_t>::const_iterator itr, const int32_t sizeOfValueType, const int32_t count) {
   switch (sizeOfValueType) {
   case 1:
-    for (int i = 0; i < count; ++i, ++itr) {
+    for (int32_t i = 0; i < count; ++i, ++itr) {
       std::cout << *itr << ' ';
     }
     break;
 
   case 2:
-    for (int i = 0; i < count; ++i, ++itr) {
+    for (int32_t i = 0; i < count; ++i, ++itr) {
       std::cout << jpeg::Deserialize(*itr, *(++itr)) << ' ';
     }
     break;
 
   case 4:
-    for (int i = 0; i < count; ++i, ++itr) {
+    for (int32_t i = 0; i < count; ++i, ++itr) {
       std::cout << jpeg::Deserialize(*itr, *(++itr), *(++itr), *(++itr)) << ' ';
     }
     break;
 
   case 8:
-    for (int i = 0; i < count; ++i, ++itr) {
+    for (int32_t i = 0; i < count; ++i, ++itr) {
       std::cout << jpeg::Deserialize(*itr, *(++itr), *(++itr), *(++itr)) << '/'
                 << jpeg::Deserialize(*itr, *(++itr), *(++itr), *(++itr)) << ' ';
     }

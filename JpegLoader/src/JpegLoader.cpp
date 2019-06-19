@@ -1,7 +1,6 @@
 #include <array>
 #include <fstream>
 #include <iostream>
-#include <optional>
 
 #include "JpegDeserialize.hpp"
 #include "JpegLoader.hpp"
@@ -41,14 +40,14 @@ void Loader::DumpExif() {
   auto [itr, segmentSize] = GetItrAtExifId();
 
   std::cout << "Exif ID code   | ";
-  for (int i = 0; i < 6; ++i) {
+  for (int32_t i = 0; i < 6; ++i) {
     std::cout << static_cast<int32_t>(*itr) << " ";
     ++itr;
   }
   std::cout << std::endl;
 
   // ===== test output =====
-  // for( int i = 0; i < segmentSize; ++i ) {
+  // for( int32_t i = 0; i < segmentSize; ++i ) {
   //  std::cout << *itr;
   //  ++itr;
   // }
@@ -96,7 +95,7 @@ void Loader::OutputIFD(std::vector<uint8_t>::const_iterator itr) {
   std::cout << "Num of Tag: " << numOfTag << std::endl;
 
   // タグの数ぶんタグフィールドを読む
-  for (int i = 0; i < numOfTag; ++i) {
+  for (int32_t i = 0; i < numOfTag; ++i) {
     OutputTagField(itr);
     itr += 12; // タグフィールドは12バイトで固定だから、これで次のタグを読める
   }
@@ -142,13 +141,10 @@ void Loader::OutputTagField(std::vector<uint8_t>::const_iterator itr) {
     ++itr;
   }
   const auto tagNumber = jpeg::Deserialize(bytes[0], bytes[1]);
-  const auto tagType = jpeg::Deserialize(bytes[2], bytes[3]);
+  const auto tagType = tag::Type(jpeg::Deserialize(bytes[2], bytes[3]));
   std::cout << "\n=======Tag Field=======" << std::endl;
   std::cout << "Number   : " << static_cast<int32_t>(bytes[0]) << " " << static_cast<int32_t>(bytes[1]) << std::endl;
-
-  if (auto tagTypeStr = tag::TypeToStr(Deserialize(bytes[2], bytes[3])); tagTypeStr) {
-    std::cout << "Type     : " << tagTypeStr.value() << std::endl;
-  }
+  std::cout << "Type     : " << tag::TypeToStr(tagType) << std::endl;
 
   // タグに含まれる値の数を読む
   for (auto& elem : bytes) {
@@ -158,7 +154,7 @@ void Loader::OutputTagField(std::vector<uint8_t>::const_iterator itr) {
   const auto tagCount = jpeg::Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]);
   std::cout << "Count    : " << tagCount << std::endl;
 
-  const auto valueByteLength = tag::ByteLengthOf(tagType, tagCount).value();
+  const auto valueByteLength = tag::ByteLengthOf(tagType, tagCount);
 
   // タグのvalueへのoffsetを読む
   for (auto& elem : bytes) {
@@ -169,10 +165,10 @@ void Loader::OutputTagField(std::vector<uint8_t>::const_iterator itr) {
   std::cout << "Val/offs : ";
   if (valueByteLength > 4) {
     int32_t skipOffset = Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]);
-    tag::OutputValue(basePosItr + skipOffset, tag::SizeOf(tagType).value(), tagCount);
+    tag::OutputValue(basePosItr + skipOffset, tag::SizeOf(tagType), tagCount);
   }
   else {
-    switch (tag::SizeOf(tagType).value()) {
+    switch (tag::SizeOf(tagType)) {
     case 1:
       std::cout << Deserialize(bytes[0]) << std::endl;
       break;

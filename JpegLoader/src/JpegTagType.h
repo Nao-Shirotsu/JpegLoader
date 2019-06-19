@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstdint>
+
 namespace jpeg::tag {
 
-enum class Type {
+enum class Type : uint32_t {
   // 1 byte
   Byte = 1,
   Ascii = 2,
