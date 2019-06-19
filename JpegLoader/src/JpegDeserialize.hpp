@@ -31,7 +31,7 @@ constexpr void ErrorizeWhenInvalidByteData(Head head, Tail... tail) {
 }
 
 // ↓の実装 ビッグエンディアンでバイト列を解釈する (ここだけ変えればリトルエンディアンにも対応できる)
-constexpr int32_t DeserializeImpl(const std::initializer_list<uint8_t>& byteRow) {
+constexpr uint32_t DeserializeImpl(const std::initializer_list<uint8_t>& byteRow) {
   int shiftAmount = byteRow.size() - 1;
   int result = 0;
   for (uint8_t byte : byteRow) {
@@ -43,7 +43,7 @@ constexpr int32_t DeserializeImpl(const std::initializer_list<uint8_t>& byteRow)
 
 // 4つ以下のuint8_tを受け取り、uint32_tにデシリアライズ
 template <class... Args>
-constexpr int32_t Deserialize(Args... args) {
+constexpr uint32_t Deserialize(Args... args) {
   ErrorizeWhenInvalidByteData<0>(args...);
   return DeserializeImpl({ args... });
 }
