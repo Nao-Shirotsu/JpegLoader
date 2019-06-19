@@ -6,10 +6,12 @@
 #include "JpegDeserialize.hpp"
 #include "JpegLoader.hpp"
 
+namespace jpeg {
+
 namespace {
 
 // TagFieldのTagValueの型を文字列に変換
-std::optional <const char*> ValueTypeToString(const int32_t type) {
+std::optional<const char*> ValueTypeToString(const int32_t type) {
   switch (type) {
   case 1:
     return "byte";
@@ -63,15 +65,47 @@ std::optional<uint16_t> SizeOfValueType(const int32_t type) {
 // TagFieldのTagValueの取り得る型とその値の数からバイト数を計算
 std::optional<int32_t> TagValueLength(const int32_t type, const int32_t count) {
   auto singleValueSize = SizeOfValueType(type);
-  if (!singleValueSize) {
+  if (singleValueSize) {
     return count * singleValueSize.value();
   }
   return std::nullopt;
 }
 
-}// anonymous namespace
+void OutputTagFieldValue(std::vector<uint8_t>::const_iterator itr, const int32_t sizeOfValueType, const int32_t count) {
+  switch (sizeOfValueType) {
+  case 1:
+    for (int i = 0; i < count; ++i, ++itr) {
+      std::cout << *itr << ' ';
+    }
+    break;
 
-namespace jpeg{
+  case 2:
+    for (int i = 0; i < count; ++i, ++itr) {
+      std::cout << jpeg::Deserialize(*itr, *(++itr)) << ' ';
+    }
+    break;
+
+  case 4:
+    for (int i = 0; i < count; ++i, ++itr) {
+      std::cout << jpeg::Deserialize(*itr, *(++itr), *(++itr), *(++itr)) << ' ';
+    }
+    break;
+
+  case 8:
+    for (int i = 0; i < count; ++i, ++itr) {
+      std::cout << jpeg::Deserialize(*itr, *(++itr), *(++itr), *(++itr)) << '/'
+                << jpeg::Deserialize(*itr, *(++itr), *(++itr), *(++itr)) << ' ';
+    }
+    break;
+
+  default:
+    std::cout << "TAG VALUE READING FAILED";
+  }
+
+  std::cout << std::endl;
+}
+
+} // anonymous namespace
 
 Loader::Loader(const std::string& fileName)
   : binaryData()
@@ -148,14 +182,7 @@ void Loader::DumpExif() {
 void Loader::OutputIFD(std::vector<uint8_t>::const_iterator itr) {
   std::cout << "\n~~~~~~~~~~~~~~~~IFD~~~~~~~~~~~~~~~~" << std::endl;
 
-  // ===== test output =====
-  // std::cout << "------\nbeginning of OutputIFD" << std::endl;
-  // =======================
-
-  // ===== test output =====
-  // std::cout << "itr pos : " << (itr - binaryData.cbegin()) << std::endl;
-  // =======================
-
+  // 読み出した値を一時保存するarray
   std::array<uint8_t, 4> bytes;
 
   // IFDのタグ数を読む
@@ -165,10 +192,6 @@ void Loader::OutputIFD(std::vector<uint8_t>::const_iterator itr) {
   ++itr;
   uint32_t numOfTag = jpeg::Deserialize(bytes[0], bytes[1]);
   std::cout << "Num of Tag: " << numOfTag << std::endl;
-
-  // ===== test output =====
-  // std::cout << "calculated numOfTag" << std::endl;
-  // =======================
 
   // タグの数ぶんタグフィールドを読む
   for (int i = 0; i < numOfTag; ++i) {
@@ -194,7 +217,7 @@ void Loader::OutputIFD(std::vector<uint8_t>::const_iterator itr) {
 
   // N-th IFD内のM-thへのoffsetが0ならM-th IFDは存在しない
   if (offset == 0) {
-    std::cout << "\n~~READING DONE, EXIT APP1 SEGMENT~~"<< std::endl;
+    std::cout << "\n~~READING DONE, EXIT APP1 SEGMENT~~" << std::endl;
     return;
   }
 
@@ -223,7 +246,6 @@ void Loader::OutputTagField(std::vector<uint8_t>::const_iterator itr) {
 
   if (auto tagTypeStr = ValueTypeToString(Deserialize(bytes[2], bytes[3])); tagTypeStr) {
     std::cout << "Type     : " << tagTypeStr.value() << std::endl;
-
   }
 
   // タグに含まれる値の数を読む
@@ -232,8 +254,9 @@ void Loader::OutputTagField(std::vector<uint8_t>::const_iterator itr) {
     ++itr;
   }
   const auto tagCount = jpeg::Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]);
-  const auto valueByteLength = TagValueLength(tagType, tagCount);
   std::cout << "Count    : " << tagCount << std::endl;
+
+  const auto valueByteLength = TagValueLength(tagType, tagCount).value();
 
   // タグのvalueへのoffsetを読む
   for (auto& elem : bytes) {
@@ -241,14 +264,13 @@ void Loader::OutputTagField(std::vector<uint8_t>::const_iterator itr) {
     ++itr;
   }
 
-  // offsetが4bytes以下ならジャンプはしない
+  std::cout << "Val/offs : ";
   if (valueByteLength > 4) {
-    // valueの長さぶん読んで戻ってくる = itrがこのタグの末尾の一個次にいる
+    int32_t skipOffset = Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]);
+    OutputTagFieldValue(basePosItr + skipOffset, SizeOfValueType(tagType).value(), tagCount);
   }
   else {
-    std::cout << "Val/offs : ";
-
-    switch(SizeOfValueType( tagType ).value()) {
+    switch (SizeOfValueType(tagType).value()) {
     case 1:
       std::cout << Deserialize(bytes[0]) << std::endl;
       break;
@@ -302,4 +324,4 @@ std::pair<std::vector<uint8_t>::const_iterator, int32_t> Loader::GetItrAtExifId(
   return std::make_pair(itr, segmentSize);
 }
 
-}// namespace jpeg
+} // namespace jpeg
