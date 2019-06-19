@@ -2,6 +2,7 @@
 
 namespace jpeg::tag {
 
+// タグフィールドのバイト列が表現され得るデータの型
 enum class Type {
   // 1 byte
   Byte = 1,
