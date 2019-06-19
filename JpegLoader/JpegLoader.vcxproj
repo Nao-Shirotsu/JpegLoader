@@ -22,10 +22,17 @@
     <None Include=".clang-format" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\JpegTagIFieldEmplacer.hpp" />
+    <ClInclude Include="src\JpegDeserialize.hpp" />
     <ClInclude Include="src\JpegLoader.hpp" />
+    <ClInclude Include="src\JpegTagField.hpp" />
+    <ClInclude Include="src\JpegTagType.hpp" />
+    <ClInclude Include="src\JpegTagUtils.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\JpegLoader.cpp" />
+    <ClCompile Include="src\JpegTagField.cpp" />
+    <ClCompile Include="src\JpegTagUtils.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

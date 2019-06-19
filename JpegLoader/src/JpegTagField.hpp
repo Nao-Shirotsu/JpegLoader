@@ -12,8 +12,8 @@ namespace jpeg::tag {
 class Field {
 public:
   // フィールドの識別子, valueの型, データの個数を初期化する。
-  // また、itrによってバイト列を読んでbyteVecに格納する。basePosItrは各offsetの起点を指すイテレータのDI。
-  Field(std::vector<uint8_t>::const_iterator itr, std::vector<uint8_t>::const_iterator basePositr_);
+  // また、itrによってバイト列を読んでbyteVecに格納する。ExifBasePosItr()は各offsetの起点を指すイテレータのDI。
+  Field(std::vector<uint8_t>::const_iterator itr, std::vector<uint8_t>::const_iterator basePosItr_);
 
   // このフィールドがIFDへのポインタであるかどうか
   bool IsPointer();

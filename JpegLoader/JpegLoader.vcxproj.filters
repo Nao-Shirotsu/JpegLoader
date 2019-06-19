@@ -4,10 +4,42 @@
     <None Include=".clang-format" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\JpegLoader.cpp" />
+    <ClCompile Include="src\JpegLoader.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JpegTagUtils.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JpegTagField.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\JpegLoader.hpp" />
+    <ClInclude Include="src\JpegLoader.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JpegTagUtils.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JpegTagType.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JpegDeserialize.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JpegTagField.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\JpegTagIFieldEmplacer.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{7a99a049-e632-4484-aa18-76ac0a5e58de}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

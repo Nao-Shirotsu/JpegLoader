@@ -10,8 +10,7 @@
 namespace jpeg {
 
 Loader::Loader(const std::string& fileName)
-  : binaryData()
-  , basePosItr() {
+  : binaryData(){
   std::ifstream ifs(fileName);
   if (!ifs) {
     std::cout << "*ERROR* image file loading failed" << std::endl;
@@ -27,18 +26,19 @@ Loader::Loader(const std::string& fileName)
   }
 }
 
-void Loader::DumpRawData() {
+void Loader::DumpRawData() const{
   for (const auto& elem : binaryData) {
     std::cout << elem;
   }
 }
 
-void Loader::DumpExif() {
+void Loader::DumpExif() const{
   if (binaryData.empty()) {
     return;
   }
 
-  auto [itr, segmentSize] = GetItrAtExifId();
+  auto itr = ExifBasePosItr();
+  itr -= 6;
 
   std::cout << "Exif ID code   | ";
   for (int32_t i = 0; i < 6; ++i) {
@@ -68,13 +68,20 @@ void Loader::DumpExif() {
   std::cout << "offset to IFD0 | " << skipOffset << std::endl;
 
   // タグフィールドのvalueオフセットの起点位置
-  basePosItr = itr - 8;
+  ExifBasePosItr() = itr - 8;
 
   // これでIFD0の先頭まで飛ぶ
-  OutputIFD(basePosItr + skipOffset);
+  OutputIFD(ExifBasePosItr() + skipOffset);
 }
 
-void Loader::OutputIFD(std::vector<uint8_t>::const_iterator itr) {
+void Loader::Emplace(tag::Field&& field) {
+  exifTagFields.emplace_back(field);
+}
+
+void Loader::ConstructTagFields() {
+}
+
+void Loader::OutputIFD(std::vector<uint8_t>::const_iterator itr) const{
   std::cout << "\n~~~~~~~~~~~~~~~~IFD~~~~~~~~~~~~~~~~" << std::endl;
 
   // 読み出した値を一時保存するarray
@@ -90,7 +97,7 @@ void Loader::OutputIFD(std::vector<uint8_t>::const_iterator itr) {
 
   // タグの数ぶんタグフィールドを読む
   for (int32_t i = 0; i < numOfTag; ++i) {
-    auto tagField = tag::Field(itr, basePosItr);
+    auto tagField = tag::Field(itr, ExifBasePosItr());
     tagField.Print();
     itr += 12; // タグフィールドは12バイトで固定だから、これで次のタグを読める
   }
@@ -109,13 +116,13 @@ void Loader::OutputIFD(std::vector<uint8_t>::const_iterator itr) {
     return;
   }
 
-  itr = basePosItr + offset;
+  itr = ExifBasePosItr() + offset;
 
   std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   OutputIFD(itr);
 }
 
-std::pair<std::vector<uint8_t>::const_iterator, int32_t> Loader::GetItrAtExifId() {
+std::vector<uint8_t>::const_iterator Loader::ExifBasePosItr() const{
   auto itr = binaryData.cbegin();
 
   // 最初のffd8を飛ばす
@@ -147,7 +154,8 @@ std::pair<std::vector<uint8_t>::const_iterator, int32_t> Loader::GetItrAtExifId(
     itr += segmentSize - 2;
   }
 
-  return std::make_pair(itr, segmentSize);
+  // Exif識別子の6つぶん飛ばす
+  return itr + 6;
 }
 
 } // namespace jpeg
