@@ -11,11 +11,6 @@ struct is_uint8<T, std::enable_if_t<std::is_same_v<T, uint8_t>>> : std::true_typ
 template <typename T>
 constexpr bool is_uint8_v = is_uint8<T>::value;
 
-// Nが4を超過していればコンパイルエラーを生成
-template <int32_t N, std::enable_if_t<N <= 4, std::nullptr_t> = nullptr>
-constexpr void ErrorizeWhenExceeded4() {
-}
-
 namespace jpeg {
 
 // ↓の再帰終了時
@@ -26,7 +21,8 @@ constexpr void ErrorizeWhenInvalidByteData() {
 // "argsの型が全てuint8_t" && "再帰回数が4回以下" なら何もしない、でなければコンパイルエラー
 template <int32_t recursionDepth, class Head, class... Tail, std::enable_if_t<is_uint8_v<Head>, std::nullptr_t> = nullptr>
 constexpr void ErrorizeWhenInvalidByteData(Head head, Tail... tail) {
-  ErrorizeWhenExceeded4<recursionDepth + 1>();
+  // 4B以上のバイト列をデシリアライズしようとするとコンパイルエラー
+  static_assert(recursionDepth < 4, "**ERROR** OVERFLOW in Deserialize()");
   ErrorizeWhenInvalidByteData<recursionDepth + 1>(tail...);
 }
 
