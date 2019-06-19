@@ -9,7 +9,7 @@
 namespace {
 
 // TagFieldのTagValueの型を文字列に変換
-const char* ValueTypeToString(const int32_t type) {
+std::optional <const char*> ValueTypeToString(const int32_t type) {
   switch (type) {
   case 1:
     return "byte";
@@ -35,7 +35,7 @@ const char* ValueTypeToString(const int32_t type) {
   case 10:
     return "signed rational";
   }
-  return "INVALID TYPE";
+  return std::nullopt;
 }
 
 // TagFieldのTagValueの型の値1つのバイト数
@@ -104,8 +104,6 @@ void Loader::DumpExif() {
 
   auto [itr, segmentSize] = GetItrAtExifId();
 
-  std::cout << std::hex;
-
   std::cout << "Exif ID code   | ";
   for (int i = 0; i < 6; ++i) {
     std::cout << static_cast<int32_t>(*itr) << " ";
@@ -144,11 +142,10 @@ void Loader::DumpExif() {
   basePosItr = itr - 8;
 
   // これでIFD0の先頭まで飛ぶ
-  itr = basePosItr + skipOffset;
-  OutputIFD(itr);
+  OutputIFD(basePosItr + skipOffset);
 }
 
-void Loader::OutputIFD(std::vector<uint8_t>::iterator itr) {
+void Loader::OutputIFD(std::vector<uint8_t>::const_iterator itr) {
   std::cout << "\n~~~~~~~~~~~~~~~~IFD~~~~~~~~~~~~~~~~" << std::endl;
 
   // ===== test output =====
@@ -156,7 +153,7 @@ void Loader::OutputIFD(std::vector<uint8_t>::iterator itr) {
   // =======================
 
   // ===== test output =====
-  // std::cout << "itr pos : " << (itr - binaryData.begin()) << std::endl;
+  // std::cout << "itr pos : " << (itr - binaryData.cbegin()) << std::endl;
   // =======================
 
   std::array<uint8_t, 4> bytes;
@@ -211,7 +208,7 @@ void Loader::OutputIFD(std::vector<uint8_t>::iterator itr) {
   OutputIFD(itr);
 }
 
-void Loader::OutputTagField(std::vector<uint8_t>::iterator itr) {
+void Loader::OutputTagField(std::vector<uint8_t>::const_iterator itr) {
   std::array<uint8_t, 4> bytes;
 
   // タグ番号とタグタイプを読む
@@ -219,20 +216,23 @@ void Loader::OutputTagField(std::vector<uint8_t>::iterator itr) {
     elem = *itr;
     ++itr;
   }
-  auto tagNumber = jpeg::Deserialize(bytes[0], bytes[1]);
-  auto tagType = jpeg::Deserialize(bytes[2], bytes[3]);
-  std::cout << std::hex;
+  const auto tagNumber = jpeg::Deserialize(bytes[0], bytes[1]);
+  const auto tagType = jpeg::Deserialize(bytes[2], bytes[3]);
   std::cout << "\n=======Tag Field=======" << std::endl;
   std::cout << "Number   : " << static_cast<int32_t>(bytes[0]) << " " << static_cast<int32_t>(bytes[1]) << std::endl;
-  std::cout << "Type     : " << ValueTypeToString(Deserialize(bytes[2], bytes[3])) << std::endl;
+
+  if (auto tagTypeStr = ValueTypeToString(Deserialize(bytes[2], bytes[3])); tagTypeStr) {
+    std::cout << "Type     : " << tagTypeStr.value() << std::endl;
+
+  }
 
   // タグに含まれる値の数を読む
   for (auto& elem : bytes) {
     elem = *itr;
     ++itr;
   }
-  auto tagCount = jpeg::Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]);
-  auto valueByteLength = TagValueLength(tagType, tagCount);
+  const auto tagCount = jpeg::Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]);
+  const auto valueByteLength = TagValueLength(tagType, tagCount);
   std::cout << "Count    : " << tagCount << std::endl;
 
   // タグのvalueへのoffsetを読む
@@ -262,22 +262,18 @@ void Loader::OutputTagField(std::vector<uint8_t>::iterator itr) {
       break;
     }
   }
-  std::cout << "\nEND AT [" << (itr - binaryData.begin()) << "] bytes" << std::endl;
+  std::cout << "\nEND AT [" << (itr - binaryData.cbegin()) << "] bytes" << std::endl;
   std::cout << "=======================\n" << std::endl;
 }
 
 
-std::pair<std::vector<uint8_t>::iterator, int32_t> Loader::GetItrAtExifId() {
-  auto itr = binaryData.begin();
-  std::cout << std::hex;
+std::pair<std::vector<uint8_t>::const_iterator, int32_t> Loader::GetItrAtExifId() {
+  auto itr = binaryData.cbegin();
 
   // 最初のffd8を飛ばす
-  // std::cout << static_cast<int32_t>(*itr);
-  ++itr;
+  itr += 2;
 
-  // std::cout << static_cast<int32_t>(*itr) << " | START" << std::endl;
-  ++itr;
-
+  // 1つのセグメントのサイズ(bytes)
   int32_t segmentSize;
 
   // Exif情報があるAPP1セグメント直前まで飛ばす
@@ -288,8 +284,6 @@ std::pair<std::vector<uint8_t>::iterator, int32_t> Loader::GetItrAtExifId() {
     uint8_t marker = *itr;
     ++itr;
 
-    // std::cout << std::hex << static_cast<int32_t>(ff) << static_cast<int32_t>(marker) << std::dec << " | SIZE: ";
-
     uint8_t segmentSizeByte1 = *itr;
     ++itr;
 
@@ -297,7 +291,6 @@ std::pair<std::vector<uint8_t>::iterator, int32_t> Loader::GetItrAtExifId() {
     ++itr;
 
     segmentSize = jpeg::Deserialize(segmentSizeByte1, segmentSizeByte2);
-    // std::cout << segmentSize << std::endl;
 
     if (marker == 0xe1) {
       break;
