@@ -85,16 +85,15 @@ void Field::Print() const{
   std::cout << "Length   : " << length << std::endl;
   std::cout << "Val/offs : ";
   PrintImpl();
-  std::cout << "\nEND AT [" << tailPos << "] bytes from basePos" << std::endl;
-  std::cout << "=======================\n"
-            << std::endl;
+  //std::cout << "\nEND AT [" << tailPos << "] bytes from basePos" << std::endl;
+  std::cout << "=======================\n" << std::endl;
 }
 
 void Field::PrintImpl() const{
   switch (type) {
   case Type::Ascii:
     for (const auto elem : byteVec) {
-      std::cout << elem << ' ';
+      std::cout << elem;
     }
     break;
 
