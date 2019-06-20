@@ -33,9 +33,6 @@
     <ClInclude Include="src\JpegTagField.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\JpegTagIFieldEmplacer.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

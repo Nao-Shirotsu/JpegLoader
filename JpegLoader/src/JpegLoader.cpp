@@ -1,11 +1,27 @@
 #include <array>
 #include <fstream>
 #include <iostream>
+#include <string>
 
 #include "JpegDeserialize.hpp"
 #include "JpegLoader.hpp"
 #include "JpegTagUtils.hpp"
 #include "JpegTagField.hpp"
+
+namespace {
+
+std::string EndianNumToString (uint8_t byte1, uint8_t byte2){
+  using namespace std::literals::string_literals;
+  if (byte1 == static_cast< uint8_t >( 0x49 ) && byte2 == static_cast< uint8_t >( 0x49 )) {
+    return "Little-Endian"s;
+  }
+  if (byte1 == static_cast<uint8_t>(0x4d) && byte2 == static_cast<uint8_t>(0x4d)) {
+    return "Big-Endian"s;
+  }
+  return ""s;
+}
+
+}
 
 namespace jpeg {
 
@@ -24,6 +40,9 @@ Loader::Loader(const std::string& fileName)
   while (!ifs.eof()) {
     binaryData.emplace_back(ifs.get());
   }
+
+  // タグフィールドのvalueオフセットの起点位置
+  ParseIFD(ExifBasePosItr() + 8);
 }
 
 void Loader::DumpRawData() const{
@@ -32,58 +51,33 @@ void Loader::DumpRawData() const{
   }
 }
 
-void Loader::DumpExif() const{
+void Loader::DumpExifTagFields() const{
   if (binaryData.empty()) {
     return;
   }
 
+  // 読み出した値を一時保存するarray
+  std::array<uint8_t, 2> bytes;
+
   auto itr = ExifBasePosItr();
-  itr -= 6;
 
-  std::cout << "Exif ID code   | ";
-  for (int32_t i = 0; i < 6; ++i) {
-    std::cout << static_cast<int32_t>(*itr) << " ";
-    ++itr;
-  }
-  std::cout << std::endl;
-
-  std::cout << "byte order     | ";
-  std::cout << static_cast<int32_t>(*itr) << " ";
-  ++itr;
-  std::cout << static_cast<int32_t>(*itr) << std::endl;
-  ++itr;
-
-  std::cout << "tiff version   | ";
-  std::cout << static_cast<int32_t>(*itr) << " ";
-  ++itr;
-  std::cout << static_cast<int32_t>(*itr) << std::endl;
-  ++itr;
-
-  std::array<uint8_t, 4> readBytes;
-  for (auto& elem : readBytes) {
+  for (auto& elem : bytes) {
     elem = *itr;
     ++itr;
   }
-  uint32_t skipOffset = jpeg::Deserialize(readBytes[0], readBytes[1], readBytes[2], readBytes[3]);
-  std::cout << "offset to IFD0 | " << skipOffset << std::endl;
+  std::cout << "byte order     | " << EndianNumToString(bytes[0], bytes[1]) << std::endl;
 
-  // タグフィールドのvalueオフセットの起点位置
-  ExifBasePosItr() = itr - 8;
+  for (auto& elem : bytes) {
+    elem = *itr;
+    ++itr;
+  }
 
-  // これでIFD0の先頭まで飛ぶ
-  OutputIFD(ExifBasePosItr() + skipOffset);
+  for (const auto& tagField : exifTagFields) {
+    tagField.Print();
+  }
 }
 
-void Loader::Emplace(tag::Field&& field) {
-  exifTagFields.emplace_back(field);
-}
-
-void Loader::ConstructTagFields() {
-}
-
-void Loader::OutputIFD(std::vector<uint8_t>::const_iterator itr) const{
-  std::cout << "\n~~~~~~~~~~~~~~~~IFD~~~~~~~~~~~~~~~~" << std::endl;
-
+void Loader::ParseIFD(std::vector<uint8_t>::const_iterator itr){
   // 読み出した値を一時保存するarray
   std::array<uint8_t, 4> bytes;
 
@@ -93,16 +87,17 @@ void Loader::OutputIFD(std::vector<uint8_t>::const_iterator itr) const{
   bytes[1] = *itr;
   ++itr;
   uint32_t numOfTag = jpeg::Deserialize(bytes[0], bytes[1]);
-  std::cout << "Num of Tag: " << numOfTag << std::endl;
 
   // タグの数ぶんタグフィールドを読む
   for (int32_t i = 0; i < numOfTag; ++i) {
     auto tagField = tag::Field(itr, ExifBasePosItr());
-    tagField.Print();
+
+    exifTagFields.emplace_back(tagField);
+
     itr += 12; // タグフィールドは12バイトで固定だから、これで次のタグを読める
 
-    if (auto itrToIfd = tagField.GetItrAtNextIFD(); itrToIfd) {
-      OutputIFD(itrToIfd.value());
+    if (auto itrToNextIfd = tagField.NextIFDItr(); itrToNextIfd) {
+      ParseIFD(itrToNextIfd.value());
     }
   }
 
@@ -112,18 +107,15 @@ void Loader::OutputIFD(std::vector<uint8_t>::const_iterator itr) const{
     ++itr;
   }
   auto offset = jpeg::Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]);
-  std::cout << "Offset : " << numOfTag << std::endl;
 
-  // N-th IFD内のM-thへのoffsetが0ならM-th IFDは存在しない
+  // 次のIFDが無い時
   if (offset == 0) {
-    std::cout << "\n~~READING DONE, EXIT APP1 SEGMENT~~" << std::endl;
     return;
   }
 
+  // 次のIFDへ
   itr = ExifBasePosItr() + offset;
-
-  std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-  OutputIFD(itr);
+  ParseIFD(itr);
 }
 
 std::vector<uint8_t>::const_iterator Loader::ExifBasePosItr() const{

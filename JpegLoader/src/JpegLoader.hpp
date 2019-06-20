@@ -3,13 +3,12 @@
 #include <string>
 #include <vector>
 
-#include "JpegTagIFieldEmplacer.hpp"
 #include "JpegTagField.hpp"
 
 namespace jpeg {
 
 // JPEG画像をロードして保持するクラス
-class Loader : public tag::IFieldEmplacer {
+class Loader{
 public:
   // ファイル名を受け取ってデータをbinaryDataに格納
   Loader(const std::string& fileName);
@@ -18,15 +17,11 @@ public:
   void DumpRawData() const;
 
   // Exifをタグ付きで標準出力
-  void DumpExif() const;
-
-  void Emplace(tag::Field&& field) override;
+  void DumpExifTagFields() const;
 
 private:
-  void ConstructTagFields();
-
-  // 0th IFDの先頭を指すitrを渡して再帰的に出力する
-  void OutputIFD(std::vector<uint8_t>::const_iterator itr) const;
+  // 0th IFDの先頭を指すitrを渡し、以降のIFDを全て解析してexifTagFieldを構築する
+  void ParseIFD(std::vector<uint8_t>::const_iterator itr);
 
   // ExifTagフィールドの起点を指すイテレータを取得
   std::vector<uint8_t>::const_iterator ExifBasePosItr() const;

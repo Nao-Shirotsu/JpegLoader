@@ -44,6 +44,7 @@ Field::Field(std::vector<uint8_t>::const_iterator itr, std::vector<uint8_t>::con
 
   tailPos = itr - basePosItr;
 
+  // value‚ð“Ç‚ñ‚ÅbyteVec‚ÉŠi”[
   if (auto byteLength = byteVec.size(); byteLength > 4) {
     uint32_t skipOffset = Deserialize(bytes[0], bytes[1], bytes[2], bytes[3]);
     itr = basePosItr + skipOffset;
@@ -59,26 +60,24 @@ Field::Field(std::vector<uint8_t>::const_iterator itr, std::vector<uint8_t>::con
       ++itr;
     }
   }
+
+  if (NextIFDItr ()) {
+    
+  }
 }
 
-std::optional<std::vector<uint8_t>::const_iterator> Field::GetItrAtNextIFD() {
+std::optional<std::vector<uint8_t>::const_iterator> Field::NextIFDItr() const{
   uint32_t tagId = Deserialize(id[0], id[1]);
   if (tagId != ID_EXIF_IFD && tagId != ID_GPS_IFD && tagId != ID_INTERPOLATION_IFD) {
     return std::nullopt;
   }
 
-  // =======test=======
-  std::cout << std::hex;
-  std::cout << "IFD ID : " << static_cast<int>(id[0]) << ' ' << static_cast<int>(id[1]) << std::endl;
-  std::cout << std::dec;
-  // ==================
-
-      uint32_t offset = jpeg::Deserialize(byteVec[0], byteVec[1], byteVec[2], byteVec[3]);
+  uint32_t offset = jpeg::Deserialize(byteVec[0], byteVec[1], byteVec[2], byteVec[3]);
   return basePosItr + offset;
 }
 
-void Field::Print() {
-  std::cout << "\n=======Tag Field=======" << std::endl;
+void Field::Print() const{
+  std::cout << "=======Tag Field=======" << std::endl;
   std::cout << std::hex;
   std::cout << "ID       : " << static_cast<int32_t>(id[0]) << ' ' << static_cast<int32_t>(id[1]) << std::endl;
   std::cout << std::dec;
@@ -91,7 +90,7 @@ void Field::Print() {
             << std::endl;
 }
 
-void Field::PrintImpl() {
+void Field::PrintImpl() const{
   switch (type) {
   case Type::Ascii:
     for (const auto elem : byteVec) {

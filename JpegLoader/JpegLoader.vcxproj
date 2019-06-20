@@ -22,7 +22,6 @@
     <None Include=".clang-format" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\JpegTagIFieldEmplacer.hpp" />
     <ClInclude Include="src\JpegDeserialize.hpp" />
     <ClInclude Include="src\JpegLoader.hpp" />
     <ClInclude Include="src\JpegTagField.hpp" />

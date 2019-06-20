@@ -14,16 +14,16 @@ class Field {
 public:
   // フィールドの識別子, valueの型, データの個数を初期化する。
   // また、itrによってバイト列を読んでbyteVecに格納する。ExifBasePosItr()は各offsetの起点を指すイテレータのDI。
-  Field(std::vector<uint8_t>::const_iterator itr, std::vector<uint8_t>::const_iterator basePosItr_);
+  Field(std::vector<uint8_t>::const_iterator itr, const std::vector<uint8_t>::const_iterator basePosItr_);
 
   // このフィールドがIFDへのポインタであればoffsetを、そうでなければnulloptを返す
-  std::optional<std::vector<uint8_t>::const_iterator> GetItrAtNextIFD();
+  std::optional<std::vector<uint8_t>::const_iterator> NextIFDItr() const;
 
   // 標準出力する
-  void Print();
+  void Print() const;
 
 private:
-  void PrintImpl();
+  void PrintImpl() const;
 
   const std::vector<uint8_t>::const_iterator basePosItr;
   Type type;
