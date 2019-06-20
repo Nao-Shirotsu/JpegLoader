@@ -100,6 +100,10 @@ void Loader::OutputIFD(std::vector<uint8_t>::const_iterator itr) const{
     auto tagField = tag::Field(itr, ExifBasePosItr());
     tagField.Print();
     itr += 12; // タグフィールドは12バイトで固定だから、これで次のタグを読める
+
+    if (auto itrToIfd = tagField.GetItrAtNextIFD(); itrToIfd) {
+      OutputIFD(itrToIfd.value());
+    }
   }
 
   // 次のIFDへのoffsetを読む

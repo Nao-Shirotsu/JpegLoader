@@ -6,9 +6,9 @@
 #include "JpegTagUtils.hpp"
 
 namespace {
-constexpr uint32_t PTR_TO_EXIF_IFD = jpeg::Deserialize(static_cast<uint8_t>(0x87), static_cast<uint8_t>(0x69));
-constexpr uint32_t PTR_TO_GPS_IFD = jpeg::Deserialize(static_cast<uint8_t>(0x88), static_cast<uint8_t>(0x25));
-constexpr uint32_t PTR_TO_ITPLT_IFD = jpeg::Deserialize(static_cast<uint8_t>(0xa0), static_cast<uint8_t>(0x05));
+constexpr uint32_t ID_EXIF_IFD = jpeg::Deserialize(static_cast<uint8_t>(0x87), static_cast<uint8_t>(0x69));
+constexpr uint32_t ID_GPS_IFD = jpeg::Deserialize(static_cast<uint8_t>(0x88), static_cast<uint8_t>(0x25));
+constexpr uint32_t ID_INTERPOLATION_IFD = jpeg::Deserialize(static_cast<uint8_t>(0xa0), static_cast<uint8_t>(0x05));
 }
 
 namespace jpeg::tag {
@@ -61,18 +61,20 @@ Field::Field(std::vector<uint8_t>::const_iterator itr, std::vector<uint8_t>::con
   }
 }
 
-bool Field::IsPointer() {
-  if (byteVec.size() != 4 || type != Type::Long) {
-    return false;
+std::optional<std::vector<uint8_t>::const_iterator> Field::GetItrAtNextIFD() {
+  uint32_t tagId = Deserialize(id[0], id[1]);
+  if (tagId != ID_EXIF_IFD && tagId != ID_GPS_IFD && tagId != ID_INTERPOLATION_IFD) {
+    return std::nullopt;
   }
 
-  uint32_t ifdPtr = jpeg::Deserialize(byteVec[0], byteVec[1]);
+  // =======test=======
+  std::cout << std::hex;
+  std::cout << "IFD ID : " << static_cast<int>(id[0]) << ' ' << static_cast<int>(id[1]) << std::endl;
+  std::cout << std::dec;
+  // ==================
 
-  if (ifdPtr == PTR_TO_EXIF_IFD || ifdPtr == PTR_TO_GPS_IFD || ifdPtr == PTR_TO_ITPLT_IFD) {
-    return true;
-  }
-
-  return false;
+      uint32_t offset = jpeg::Deserialize(byteVec[0], byteVec[1], byteVec[2], byteVec[3]);
+  return basePosItr + offset;
 }
 
 void Field::Print() {

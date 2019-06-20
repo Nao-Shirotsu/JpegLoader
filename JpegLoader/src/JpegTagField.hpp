@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include <array>
+#include <optional>
 
 #include "JpegTagType.h"
 
@@ -15,8 +16,8 @@ public:
   // また、itrによってバイト列を読んでbyteVecに格納する。ExifBasePosItr()は各offsetの起点を指すイテレータのDI。
   Field(std::vector<uint8_t>::const_iterator itr, std::vector<uint8_t>::const_iterator basePosItr_);
 
-  // このフィールドがIFDへのポインタであるかどうか
-  bool IsPointer();
+  // このフィールドがIFDへのポインタであればoffsetを、そうでなければnulloptを返す
+  std::optional<std::vector<uint8_t>::const_iterator> GetItrAtNextIFD();
 
   // 標準出力する
   void Print();
