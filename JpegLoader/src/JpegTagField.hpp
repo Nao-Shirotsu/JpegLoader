@@ -19,8 +19,11 @@ public:
   // このフィールドがIFDへのポインタであればoffsetを、そうでなければnulloptを返す
   std::optional<std::vector<uint8_t>::const_iterator> NextIFDItr() const;
 
-  // 標準出力する
+  // タグ情報を標準出力する
   void Print() const;
+
+  // 1行で読みやすく標準出力する
+  void PrintSimply() const;
 
 private:
   void PrintImpl() const;

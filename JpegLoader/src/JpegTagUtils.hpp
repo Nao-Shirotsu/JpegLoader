@@ -16,7 +16,6 @@ uint32_t SizeOf(const Type type);
 // Tag::Typeの値が何個あると何バイトになるか
 uint32_t ByteLengthOf(const Type type, const int32_t count);
 
-// タグフィールドの先頭を指すイテレータを渡すと情報を出力
-void OutputValue(std::vector<uint8_t>::const_iterator itr, const int32_t sizeOfValueType, const int32_t count);
+std::string IDToString(const uint8_t byte1, const uint8_t byte2);
 
 } // namespace jpeg::tag:tag

@@ -8,7 +8,7 @@
 namespace jpeg {
 
 // JPEG画像をロードして保持するクラス
-class Loader{
+class Loader {
 public:
   // ファイル名を受け取ってデータをbinaryDataに格納
   Loader(const std::string& fileName);
@@ -18,6 +18,9 @@ public:
 
   // Exifをタグ付きで標準出力
   void DumpExifTagFields() const;
+
+  // Exifを読みやすく表示
+  void DumpExif() const;
 
 private:
   // 0th IFDの先頭を指すitrを渡し、以降のIFDを全て解析してexifTagFieldを構築する
@@ -33,4 +36,4 @@ private:
   std::vector<uint8_t> binaryData;
 };
 
-}// namespace jpeg
+} // namespace jpeg

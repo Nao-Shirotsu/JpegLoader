@@ -79,14 +79,20 @@ std::optional<std::vector<uint8_t>::const_iterator> Field::NextIFDItr() const{
 void Field::Print() const{
   std::cout << "=======Tag Field=======" << std::endl;
   std::cout << std::hex;
-  std::cout << "ID       : " << static_cast<int32_t>(id[0]) << ' ' << static_cast<int32_t>(id[1]) << std::endl;
+  std::cout << "ID     : 0x[" << static_cast<uint32_t>(id[0]) << ' ' << static_cast<uint32_t>(id[1]) << "] aka " << IDToString(id[0], id[1]) << std::endl;
   std::cout << std::dec;
-  std::cout << "Type     : " << tag::TypeToStr(type) << std::endl;
-  std::cout << "Length   : " << length << std::endl;
-  std::cout << "Val/offs : ";
+  std::cout << "Type   : " << tag::TypeToStr(type) << std::endl;
+  std::cout << "Length : " << length << std::endl;
+  std::cout << "Value  : ";
   PrintImpl();
   //std::cout << "\nEND AT [" << tailPos << "] bytes from basePos" << std::endl;
   std::cout << "=======================\n" << std::endl;
+}
+
+void Field::PrintSimply() const {
+  std::cout << '[' << IDToString(id[0], id[1]) << "]\n";
+  PrintImpl();
+  std::cout << std::endl;
 }
 
 void Field::PrintImpl() const{
