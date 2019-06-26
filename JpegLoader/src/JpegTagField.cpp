@@ -115,10 +115,30 @@ void Field::PrintImpl() const{
     }
     break;
 
+  case Type::SLong:
+    for (auto printItr = byteVec.cbegin(); printItr != byteVec.cend(); printItr += 4) {
+      char sign = (*printItr & 0b1000) ? '-' : '+';
+      uint8_t headByte = *printItr & 0x0111;
+      std::cout << sign << Deserialize(headByte, *(printItr + 1), *(printItr + 2), *(printItr + 3)) << ' ';
+    }
+    break;
+
   case Type::Rational:
     for (auto printItr = byteVec.cbegin(); printItr != byteVec.cend(); printItr += 8) {
       std::cout << Deserialize(*printItr, *(printItr + 1), *(printItr + 2), *(printItr + 3)) << '/';
       std::cout << Deserialize(*(printItr + 4), *(printItr + 5), *(printItr + 6), *(printItr + 7)) << ' ';
+    }
+    break;
+
+  case Type::SRational:
+    for (auto printItr = byteVec.cbegin(); printItr != byteVec.cend(); printItr += 8) {
+      bool numerIsMinus = *printItr & 0b1000;
+      bool denomIsMinus = *(printItr + 4) & 0b1000;
+      char sign = (numerIsMinus ^ denomIsMinus) ? '-' : '+';
+      uint8_t headByteNumer = *printItr & 0b0111;
+      uint8_t headByteDenom = *(printItr + 4) & 0b0111;
+      std::cout << sign << Deserialize(headByteNumer, *(printItr + 1), *(printItr + 2), *(printItr + 3)) << '/';
+      std::cout << Deserialize(headByteDenom, *(printItr + 5), *(printItr + 6), *(printItr + 7)) << ' ';
     }
     break;
 
