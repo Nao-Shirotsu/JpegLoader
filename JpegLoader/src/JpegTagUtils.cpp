@@ -108,6 +108,12 @@ std::string IDToString(const uint8_t byte1, const uint8_t byte2) {
   case 0x013f:
     return "PrimaryChromaticities"s;
 
+  case 0x0201:
+    return "JPEGInterchangeFormat"s;
+
+  case 0x0202:
+    return "JPEGInterchangeFormatLength"s;
+
   case 0x0211:
     return "YCbCrCoefficients"s;
 
